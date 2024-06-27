@@ -1,0 +1,16 @@
+{
+  "plugins": [
+    {
+      "name": "Inline Entries",
+      "className": "CraftInlineEntries",
+      "description": "Adds text to the editor.",
+      "path": "src/index.js",
+      "uiComponents": [
+        {
+          "name": "createInlineEntry",
+          "type": "Button"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "name": "little-miss-robot/craft-ckeditor-inline-entries",
+  "description": "Extend CKEditor with inline entries in Craft",
+  "type": "craft-plugin",
+  "version": "1.0.0",
+  "homepage": "https://littlemissrobot.com",
+  "license": "mit",
+  "keywords": [
+    "ckeditor",
+    "nested entries",
+    "inline entries"
+  ],
+  "authors": [{
+    "name": "Little Miss Robot",
+    "homepage": "https://littlemissrobot.com/"
+  }],
+  "support": {
+    "email": "craft@littlemissrobot.com",
+    "issues": "https://github.com/little-miss-robot/craft-ckeditor-inline-entries/issues?state=open",
+    "source": "https://github.com/little-miss-robot/craft-ckeditor-inline-entries",
+    "docs": "https://github.com/little-miss-robot/craft-ckeditor-inline-entries",
+    "rss": "https://github.com/little-miss-robot/craft-ckeditor-inline-entries/releases.atom"
+  },
+  "require": {
+    "php": ">=8.2",
+    "craftcms/ckeditor" : "^4.1.0",
+    "craftcms/cms": "^5.2.0"
+  },
+  "require-dev": {
+    "craftcms/ecs": "dev-main",
+    "craftcms/phpstan": "dev-main"
+  },
+  "autoload": {
+    "psr-4": {
+      "littlemissrobot\\craftckeditorinlineentries\\": "src/"
+    }
+  },
+  "extra": {
+    "handle": "ckeditor-inline-entries",
+    "name": "CKEditor Inline Entries",
+    "developer": "Little Miss Robot",
+    "documentationUrl": "https://github.com/little-miss-robot/craft-ckeditor-inline-entries"
+  },
+  "scripts": {
+    "check-cs": "ecs check --ansi",
+    "fix-cs": "ecs check --ansi --fix",
+    "phpstan": "phpstan --memory-limit=1G"
+  },
+  "config": {
+    "sort-packages": true,
+    "platform": {
+      "php": "8.2"
+    },
+    "allow-plugins": {
+      "yiisoft/yii2-composer": true,
+      "craftcms/plugin-installer": true
+    }
+  }
+}
