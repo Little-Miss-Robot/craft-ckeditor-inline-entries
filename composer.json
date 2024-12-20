@@ -23,8 +23,8 @@
   },
   "require": {
     "php": ">=8.2",
-    "craftcms/ckeditor" : "^4.1.0",
-    "craftcms/cms": "^5.2.0"
+    "craftcms/ckeditor" : "^4.4.0",
+    "craftcms/cms": "^5.5.0"
   },
   "require-dev": {
     "craftcms/ecs": "dev-main",

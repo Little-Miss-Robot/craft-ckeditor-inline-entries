@@ -1,14 +1,14 @@
-import {Plugin} from 'ckeditor5/src/core.js';
+import { Plugin } from "ckeditor5/src/core.js";
 import {
   addListToDropdown,
   ButtonView,
   createDropdown,
   ViewModel,
-} from 'ckeditor5/src/ui.js';
-import {Range} from 'ckeditor5/src/engine.js';
-import {Collection} from 'ckeditor5/src/utils.js';
-import {isWidget, WidgetToolbarRepository} from 'ckeditor5/src/widget.js';
-import { DoubleClickObserver } from '../../../../../vendor/craftcms/ckeditor/src/web/assets/ckeditor/src/observers/domevent';
+} from "ckeditor5/src/ui.js";
+import { Range } from "ckeditor5/src/engine.js";
+import { Collection } from "ckeditor5/src/utils.js";
+import { isWidget, WidgetToolbarRepository } from "ckeditor5/src/widget.js";
+import { DoubleClickObserver } from "../../../../../vendor/craftcms/ckeditor/src/web/assets/ckeditor/src/observers/domevent";
 
 export default class CraftInlineEntriesUI extends Plugin {
   /**
@@ -22,19 +22,19 @@ export default class CraftInlineEntriesUI extends Plugin {
    * @inheritDoc
    */
   static get pluginName() {
-    return 'CraftInlineEntriesUI';
+    return "CraftInlineEntriesUI";
   }
 
   /**
    * @inheritDoc
    */
   init() {
-    this.editor.ui.componentFactory.add('createInlineEntry', (locale) => {
-      return this._createToolbarEntriesButton(locale);
+    this.editor.ui.componentFactory.add("createInlineEntry", (locale) => {
+      return this._createToolbarInlineEntriesButton(locale);
     });
 
-    this.editor.ui.componentFactory.add('editInlineEntryBtn', (locale) => {
-      return this._createEditEntryBtn(locale);
+    this.editor.ui.componentFactory.add("editInlineEntryBtn", (locale) => {
+      return this._createEditInlineEntryBtn(locale);
     });
 
     this._listenToEvents();
@@ -46,12 +46,12 @@ export default class CraftInlineEntriesUI extends Plugin {
   afterInit() {
     // this is needed for the contextual balloon to show for each added entry widget
     const widgetToolbarRepository = this.editor.plugins.get(
-      WidgetToolbarRepository,
+      WidgetToolbarRepository
     );
-    widgetToolbarRepository.register('inlineEntriesBalloon', {
-      ariaLabel: Craft.t('ckeditor', 'Inline Entry toolbar'),
+    widgetToolbarRepository.register("inlineEntriesBalloon", {
+      ariaLabel: Craft.t("ckeditor", "Inline Entry toolbar"),
       // Toolbar Buttons
-      items: ['editInlineEntryBtn'],
+      items: ["editInlineEntryBtn"],
       // If a related element is returned the toolbar is attached
       getRelatedElement: (selection) => {
         const viewElement = selection.getSelectedElement();
@@ -63,9 +63,8 @@ export default class CraftInlineEntriesUI extends Plugin {
         if (
           viewElement &&
           isWidget(viewElement) &&
-          viewElement.hasClass('cke-inline-entry-card')
+          viewElement.hasClass("cke-inline-entry-card")
         ) {
-          console.log("return", viewElement);
           return viewElement;
         }
 
@@ -85,19 +84,27 @@ export default class CraftInlineEntriesUI extends Plugin {
 
     view.addObserver(DoubleClickObserver);
 
-    this.editor.listenTo(viewDocument, 'dblclick', (evt, data) => {
+    this.editor.listenTo(viewDocument, "dblclick", (evt, data) => {
       const modelElement = this.editor.editing.mapper.toModelElement(
-        data.target.parent,
+        data.target.parent
       );
 
-      if (modelElement.name === 'craftInlineEntryModel') {
-        const selection = this.editor.model.document.selection;
-        const viewElement = selection.getSelectedElement();
-        const entryId = viewElement.getAttribute('entryId');
-
-        this._showEditEntrySlideout(entryId);
+      if (modelElement.name === "craftInlineEntryModel") {
+        this._initEditEntrySlideout(data, modelElement);
       }
     });
+  }
+
+  _initEditEntrySlideout(data = null, modelElement = null) {
+    if (modelElement === null) {
+      const selection = this.editor.model.document.selection;
+      modelElement = selection.getSelectedElement();
+    }
+
+    const entryId = modelElement.getAttribute("entryId");
+    const siteId = viewElement.getAttribute("siteId") ?? null;
+
+    this._showEditEntrySlideout(entryId, siteId, modelElement);
   }
 
   /**
@@ -106,10 +113,10 @@ export default class CraftInlineEntriesUI extends Plugin {
    * @param locale
    * @private
    */
-  _createToolbarEntriesButton(locale) {
+  _createToolbarInlineEntriesButton(locale) {
     const editor = this.editor;
-    const entryTypeOptions = editor.config.get('entryTypeOptions');
-    const insertInlineEntryCommand = editor.commands.get('insertInlineEntry');
+    const entryTypeOptions = editor.config.get("entryTypeOptions");
+    const insertInlineEntryCommand = editor.commands.get("insertInlineEntry");
 
     if (!entryTypeOptions || !entryTypeOptions.length) {
       return;
@@ -117,26 +124,28 @@ export default class CraftInlineEntriesUI extends Plugin {
 
     const dropdownView = createDropdown(locale);
     dropdownView.buttonView.set({
-      label:
-        Craft.t('app', 'New {type}', {
-          type: Craft.t('app', 'inline entry'),
-        }),
+      label: Craft.t("app", "New {type}", {
+        type: Craft.t("app", "inline entry"),
+      }),
       tooltip: true,
       withText: true,
       //commandValue: null,
     });
 
-    dropdownView.bind('isEnabled').to(insertInlineEntryCommand);
+    dropdownView.bind("isEnabled").to(insertInlineEntryCommand);
     addListToDropdown(
       dropdownView,
       () =>
-        this._getDropdownItemsDefinitions(entryTypeOptions, insertInlineEntryCommand),
+        this._getDropdownItemsDefinitions(
+          entryTypeOptions,
+          insertInlineEntryCommand
+        ),
       {
-        ariaLabel: Craft.t('ckeditor', 'Entry types list'),
-      },
+        ariaLabel: Craft.t("ckeditor", "Entry types list"),
+      }
     );
     // Execute command when an item from the dropdown is selected.
-    this.listenTo(dropdownView, 'execute', (evt) => {
+    this.listenTo(dropdownView, "execute", (evt) => {
       this._showCreateEntrySlideout(evt.source.commandValue);
     });
 
@@ -155,7 +164,7 @@ export default class CraftInlineEntriesUI extends Plugin {
     const itemDefinitions = new Collection();
     options.map((option) => {
       const definition = {
-        type: 'button',
+        type: "button",
         model: new ViewModel({
           commandValue: option.value, //entry type id
           label: option.label || option.value,
@@ -175,37 +184,116 @@ export default class CraftInlineEntriesUI extends Plugin {
    * @returns {ButtonView}
    * @private
    */
-  _createEditEntryBtn(locale) {
+  _createEditInlineEntryBtn(locale) {
     // const command = this.editor.commands.get('insertInlineEntry');
     const button = new ButtonView(locale);
     button.set({
       isEnabled: true,
-      label: Craft.t('app', 'Edit {type}', {
-        type: Craft.t('app', 'inline entry'),
+      label: Craft.t("app", "Edit {type}", {
+        type: Craft.elementTypeNames["craft\\elements\\Entry"][2],
       }),
       tooltip: true,
       withText: true,
     });
 
-    this.listenTo(button, 'execute', (evt) => {
-      const selection = this.editor.model.document.selection;
-      const viewElement = selection.getSelectedElement();
-      const entryId = viewElement.getAttribute('entryId');
-      this._showEditEntrySlideout(entryId);
+    this.listenTo(button, "execute", (evt) => {
+      this._initEditEntrySlideout();
     });
 
     return button;
   }
 
   /**
+   * Returns Craft.ElementEditor instance that the CKEditor field belongs to.
+   *
+   * @returns {*}
+   */
+  getElementEditor() {
+    const $editorContainer = $(this.editor.ui.view.element).closest(
+      "form,.lp-editor-container"
+    );
+    const elementEditor = $editorContainer.data("elementEditor");
+
+    return elementEditor;
+  }
+
+  /**
+   * Returns HTML of the card by the entry ID.
+   *
+   * @param entryId
+   * @returns {*}
+   * @private
+   */
+  _getCardElement(entryId) {
+    let $container = $(this.editor.ui.element);
+    return $container.find('.element.card[data-id="' + entryId + '"]');
+  }
+
+  /**
    * Opens an element editor for existing entry
    *
    * @param entryId
+   * @param siteId
    * @private
    */
-  _showEditEntrySlideout(entryId) {
-    Craft.createElementEditor(this.elementType, {
+  _showEditEntrySlideout(entryId, siteId, modelElement) {
+    const editor = this.editor;
+    const elementEditor = this.getElementEditor();
+
+    const slideout = Craft.createElementEditor(this.elementType, null, {
       elementId: entryId,
+      params: {
+        siteId: siteId,
+      },
+      onBeforeSubmit: async () => {
+        let $element = this._getCardElement(entryId);
+
+        // If the nested element is primarily owned by the canonical entry being edited,
+        // then ensure we're working with a draft and save the nested entry changes to the draft
+        if (
+          $element !== null &&
+          Garnish.hasAttr($element, "data-owner-is-canonical") &&
+          !elementEditor.settings.isUnpublishedDraft
+        ) {
+          await slideout.elementEditor.checkForm(true, true);
+          let baseInputName = $(editor.sourceElement).attr("name");
+          // mark as dirty
+          if (elementEditor && baseInputName) {
+            await elementEditor.setFormValue(baseInputName, "*");
+          }
+          if (
+            elementEditor.settings.draftId &&
+            slideout.elementEditor.settings.draftId
+          ) {
+            if (!slideout.elementEditor.settings.saveParams) {
+              slideout.elementEditor.settings.saveParams = {};
+            }
+            slideout.elementEditor.settings.saveParams.action =
+              "elements/save-nested-element-for-derivative";
+            slideout.elementEditor.settings.saveParams.newOwnerId =
+              elementEditor.getDraftElementId($element.data("owner-id"));
+          }
+        }
+      },
+      onSubmit: (ev) => {
+        let $element = this._getCardElement(entryId);
+        if ($element !== null && ev.data.id != $element.data("id")) {
+          // swap the element with the new one
+          $element
+            .attr("data-id", ev.data.id)
+            .data("id", ev.data.id)
+            .data("owner-id", ev.data.ownerId);
+
+          // and tell CKE about it
+          editor.editing.model.change((writer) => {
+            writer.setAttribute("entryId", ev.data.id, modelElement);
+            editor.ui.update();
+          });
+
+          // and refresh the card
+          Craft.refreshElementInstances(ev.data.id);
+        }
+      },
     });
   }
 
@@ -218,41 +306,34 @@ export default class CraftInlineEntriesUI extends Plugin {
   async _showCreateEntrySlideout(entryTypeId) {
     const editor = this.editor;
     const nestedElementAttributes = editor.config.get(
-      'nestedElementAttributes',
+      "nestedElementAttributes"
     );
-    console.log(nestedElementAttributes);
 
     const params = Object.assign({}, nestedElementAttributes, {
       typeId: entryTypeId,
     });
 
-    const $editorContainer = $(editor.ui.view.element).closest(
-      'form,.lp-editor-container',
-    );
-    const elementEditor = $editorContainer.data('elementEditor');
+    const elementEditor = this.getElementEditor();
 
     if (elementEditor) {
       await elementEditor.markDeltaNameAsModified(editor.sourceElement.name);
       // replace the owner ID with the new one, maybe?
       params.ownerId = elementEditor.getDraftElementId(
-        nestedElementAttributes.ownerId,
+        nestedElementAttributes.ownerId
       );
     }
 
     let data;
 
-    console.log(params);
-
     try {
       const response = await Craft.sendActionRequest(
-        'POST',
-        'elements/create',
+        "POST",
+        "elements/create",
         {
           data: params,
-        },
+        }
       );
       data = response.data;
-      console.log(data);
     } catch (e) {
       Craft.cp.displayError(e?.response?.data?.error);
       throw e;
@@ -263,14 +344,14 @@ export default class CraftInlineEntriesUI extends Plugin {
       draftId: data.element.draftId,
       params: {
         fresh: 1,
+        siteId: data.element.siteId,
       },
     });
 
-    slideout.on('submit', (ev) => {
-      console.log(ev);
-
-      editor.commands.execute('insertInlineEntry', {
+    slideout.on("submit", (ev) => {
+      editor.commands.execute("insertInlineEntry", {
         entryId: ev.data.id,
+        siteId: ev.data.siteId,
       });
     });
   }

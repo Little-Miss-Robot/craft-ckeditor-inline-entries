@@ -1,10 +1,10 @@
-import {Plugin} from 'ckeditor5/src/core.js';
+import { Plugin } from "ckeditor5/src/core.js";
 import {
   Widget,
   toWidget,
   viewToModelPositionOutsideModelElement,
-} from 'ckeditor5/src/widget.js';
-import CraftInlineEntriesCommand from './inline-entries-command';
+} from "ckeditor5/src/widget.js";
+import CraftInlineEntriesCommand from "./inline-entries-command";
 
 export default class CraftInlineEntriesEditing extends Plugin {
   /**
@@ -18,7 +18,7 @@ export default class CraftInlineEntriesEditing extends Plugin {
    * @inheritDoc
    */
   static get pluginName() {
-    return 'CraftInlineEntriesEditing';
+    return "CraftInlineEntriesEditing";
   }
 
   /**
@@ -33,14 +33,17 @@ export default class CraftInlineEntriesEditing extends Plugin {
     const editor = this.editor;
 
     // add the command
-    editor.commands.add('insertInlineEntry', new CraftInlineEntriesCommand(editor));
+    editor.commands.add(
+      "insertInlineEntry",
+      new CraftInlineEntriesCommand(editor)
+    );
 
     // fix position mapping (model-nodelist-offset-out-of-bounds)
     editor.editing.mapper.on(
-      'viewToModelPosition',
+      "viewToModelPosition",
       viewToModelPositionOutsideModelElement(editor.model, (viewElement) => {
-        viewElement.hasClass('cke-inline-entry-card');
-      }),
+        viewElement.hasClass("cke-inline-entry-card");
+      })
     );
   }
 
@@ -51,9 +54,9 @@ export default class CraftInlineEntriesEditing extends Plugin {
   _defineSchema() {
     const schema = this.editor.model.schema;
 
-    schema.register('craftInlineEntryModel', {
-      inheritAllFrom: '$inlineObject',
-      allowAttributes: ['cardHtml', 'entryId'],
+    schema.register("craftInlineEntryModel", {
+      inheritAllFrom: "$inlineObject",
+      allowAttributes: ["cardHtml", "entryId", "siteId"],
       allowChildren: false,
     });
   }
@@ -66,29 +69,33 @@ export default class CraftInlineEntriesEditing extends Plugin {
     const conversion = this.editor.conversion;
 
     // converts data view to a model
-    conversion.for('upcast').elementToElement({
+    conversion.for("upcast").elementToElement({
       view: {
-        name: 'craft-inline-entry', // has to be lower case
+        name: "craft-inline-entry", // has to be lower case
       },
-      model: (viewElement, {writer: modelWriter}) => {
-        const cardHtml = viewElement.getAttribute('data-card-html');
-        const entryId = viewElement.getAttribute('data-entry-id');
+      model: (viewElement, { writer: modelWriter }) => {
+        const cardHtml = viewElement.getAttribute("data-card-html");
+        const entryId = viewElement.getAttribute("data-entry-id");
+        const siteId = viewElement.getAttribute("data-site-id") ?? null;
 
-        return modelWriter.createElement('craftInlineEntryModel', {
+        return modelWriter.createElement("craftInlineEntryModel", {
           cardHtml: cardHtml,
           entryId: entryId,
+          siteId: siteId,
         });
       },
     });
 
     // for converting model into editing view (html) that we see in editor UI
-    conversion.for('editingDowncast').elementToElement({
-      model: 'craftInlineEntryModel',
-      view: (modelItem, {writer: viewWriter}) => {
-        const entryId = modelItem.getAttribute('entryId') ?? null;
-        const cardContainer = viewWriter.createContainerElement('span', {
-          class: 'cke-inline-entry-card',
-          'data-entry-id': entryId,
+    conversion.for("editingDowncast").elementToElement({
+      model: "craftInlineEntryModel",
+      view: (modelItem, { writer: viewWriter }) => {
+        const entryId = modelItem.getAttribute("entryId") ?? null;
+        const siteId = modelItem.getAttribute("siteId") ?? null;
+        const cardContainer = viewWriter.createContainerElement("div", {
+          class: "cke-inline-entry-card",
+          "data-entry-id": entryId,
+          "data-site-id": siteId,
         });
         addCardHtmlToContainer(modelItem, viewWriter, cardContainer);
 
@@ -98,30 +105,30 @@ export default class CraftInlineEntriesEditing extends Plugin {
     });
 
     // for converting model into data view (html) that gets saved in the DB,
-    conversion.for('dataDowncast').elementToElement({
-      model: 'craftInlineEntryModel',
-      view: (modelItem, {writer: viewWriter}) => {
-        const entryId = modelItem.getAttribute('entryId') ?? null;
+    conversion.for("dataDowncast").elementToElement({
+      model: "craftInlineEntryModel",
+      view: (modelItem, { writer: viewWriter }) => {
+        const entryId = modelItem.getAttribute("entryId") ?? null;
+        const siteId = modelItem.getAttribute("siteId") ?? null;
 
-        return viewWriter.createContainerElement('craft-inline-entry', {
-          'data-entry-id': entryId,
+        return viewWriter.createContainerElement("craft-inline-entry", {
+          "data-entry-id": entryId,
+          "data-site-id": siteId,
         });
       },
     });
 
     // Populate card container with card HTML
     const addCardHtmlToContainer = (modelItem, viewWriter, cardContainer) => {
-      console.log(modelItem);
-
       this._getCardHtml(modelItem).then((data) => {
         const card = viewWriter.createRawElement(
-          'div',
+          "div",
           null,
           function (domElement) {
             domElement.innerHTML = data.cardHtml;
             Craft.appendHeadHtml(data.headHtml);
             Craft.appendBodyHtml(data.bodyHtml);
-          },
+          }
         );
 
         viewWriter.insert(viewWriter.createPositionAt(cardContainer, 0), card);
@@ -136,7 +143,7 @@ export default class CraftInlineEntriesEditing extends Plugin {
         // refresh ui after drag&drop or sourceMode exit
         editor.model.change((writer) => {
           editor.ui.update();
-          $(editor.sourceElement).trigger('keyup'); // also trigger auto-save
+          $(editor.sourceElement).trigger("keyup"); // also trigger auto-save
         });
       });
     };
@@ -150,45 +157,43 @@ export default class CraftInlineEntriesEditing extends Plugin {
    * @private
    */
   async _getCardHtml(modelItem) {
-    let cardHtml = modelItem.getAttribute('cardHtml') ?? null;
-    console.log(cardHtml);
+    let cardHtml = modelItem.getAttribute("cardHtml") ?? null;
 
-    let parents = $(this.editor.sourceElement).parents('.field');
-    const layoutElementUid = $(parents[0]).data('layout-element');
+    let parents = $(this.editor.sourceElement).parents(".field");
+    const layoutElementUid = $(parents[0]).data("layout-element");
 
     // if there's no cardHtml attribute for any reason - get the markup from Craft
     // this can happen e.g. if you make changes in the source mode and then come back to the editing mode
     if (cardHtml) {
-      return {cardHtml};
+      return { cardHtml };
     }
 
-    const entryId = modelItem.getAttribute('entryId') ?? null;
-    const siteId = Craft.siteId;
+    const entryId = modelItem.getAttribute("entryId") ?? null;
+    const siteId = modelItem.getAttribute("siteId") ?? null;
 
     try {
       // Let the element editor handle the autosave first, in case the nested entry
       // is soft-deleted and needs to be restored.
       const editor = this.editor;
       const $editorContainer = $(editor.ui.view.element).closest(
-        'form,.lp-editor-container',
+        "form,.lp-editor-container"
       );
-      const elementEditor = $editorContainer.data('elementEditor');
+      const elementEditor = $editorContainer.data("elementEditor");
       if (elementEditor) {
+        console.log(elementEditor);
         await elementEditor.checkForm();
       }
 
-      console.log(entryId);
-
-      const {data} = await Craft.sendActionRequest(
-        'POST',
-        'ckeditor/ckeditor/entry-card-html',
+      const { data } = await Craft.sendActionRequest(
+        "POST",
+        "ckeditor/ckeditor/entry-card-html",
         {
           data: {
             entryId: entryId,
             siteId: siteId,
             layoutElementUid: layoutElementUid,
           },
-        },
+        }
       );
       return data;
     } catch (e) {
@@ -199,15 +204,15 @@ export default class CraftInlineEntriesEditing extends Plugin {
         '<div class="card-content">' +
         '<div class="card-heading">' +
         '<div class="label error">' +
-        '<span>' +
-        (e?.response?.data?.message || 'An unknown error occurred.') +
-        '</span>' +
-        '</div>' +
-        '</div>' +
-        '</div>' +
-        '</div>';
+        "<span>" +
+        (e?.response?.data?.message || "An unknown error occurred.") +
+        "</span>" +
+        "</div>" +
+        "</div>" +
+        "</div>" +
+        "</div>";
 
-      return {cardHtml};
+      return { cardHtml };
     }
   }
 }
